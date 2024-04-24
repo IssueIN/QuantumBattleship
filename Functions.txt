@@ -1,7 +1,7 @@
 int ParNum = 5;  //number of particles
 int ParCood[ParNum, 4];  //coordinate, radius and velocity of each particle: {x-cood,y-cood,radius,velocity}
 int TrapNum = 3;   //number of trap
-int TrapCood[]TrapNum, 3];  //coordinate and radius of trap  : {x-cood,y-cood,radius}
+int TrapCood[TrapNum, 3];  //coordinate and radius of trap  : {x-cood,y-cood,radius}
   
 //Set the particle on the map
 void SetPar(int number, int Cood[4]){
