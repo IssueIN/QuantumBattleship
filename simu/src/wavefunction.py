@@ -1,82 +1,39 @@
 import numpy as np
-from scipy import fftpack
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+from src.solver import TDSESolver
 
 class Wavefunction:
-    def __init__(self, x, wf_x0, V_x, hbar, m, k=None):
-        self.x, self.wf_x0, self.V_x = map(np.asarray, (x, wf_x0, V_x))
-
+    def __init__(self, x, y, wf_xy0, V_xy, hbar, m):
+        self.x = x
+        self.y = y
+        self.X, self.Y = np.meshgrid(x, y)
+        self.wf_xy0 = wf_xy0
+        self.V_xy = V_xy
         self.hbar = hbar
         self.m = m
-        self.N = len(x)
-        self.dx = self.x[1] - self.x[0]
-        self.dk = 2 * np.pi / (self.N * self.dx)
+        self.Nx = len(x)
+        self.Ny = len(y)
 
-        if k is None:
-            self.k0 = -0.5 * self.N * self.dk
-        else:
-            self.k0 = k
-        self.k = self.k0 + self.dk * np.arange(self.N)
-
-    def SSFM(self, dt, M):
-        u = self.wf_x0
-
-        expV = np.exp(-1j * self.V_x * dt / (2 * self.hbar))
-        expK = np.exp(-1j * (self.hbar * self.k**2) * dt / (2 * self.m))
-
-        results = [np.abs(u)**2]
-
-        for _ in range(M):
-            u = expV * u
-
-            u_hat = fftpack.fft(u)
-
-            u_hat = expK * u_hat
-
-            u = fftpack.ifft(u_hat)
-
-            u = expV * u
-
-            results.append(np.abs(u)**2)
-
-        return results
-
+        self.solver_x = [TDSESolver(y, wf_xy0[i, :], V_xy[i, :], hbar, m) for i in range(self.Nx)]
+        self.solver_y = [TDSESolver(x, wf_xy0[:, j], V_xy[:, j], hbar, m) for j in range(self.Ny)]
     
-if __name__ == "__main__":
-    # Define parameters
-    hbar = 1.0
-    m = 1.0
-    x = np.linspace(-10, 10, 1024)
-    wf_x0 = np.sin(np.pi * (x + 10) / 20)  # Initial wave function for infinite square well
-    V_x = np.zeros_like(x)  # Infinite square well potential
+    def solve(self, dt, Nsteps=1):
+        for solver in self.solver_x:
+            solver.solve(dt/2, Nsteps)
+        for solver in self.solver_y:
+            solver.solve(dt, Nsteps)
+        for solver in self.solver_x:
+            solver.solve(dt/2, Nsteps)
 
-    # Create wavefunction instance
-    wf = Wavefunction(x, wf_x0, V_x, hbar, m)
-
-    # Time step and number of steps
-    dt = 0.01
-    M = 100
-
-    # Perform SSFM
-    wf_results = wf.SSFM(dt, M)
-
-    # Plot the result in animation
-    fig, ax = plt.subplots()
-    line, = ax.plot(x, wf_results[0])
-    ax.set_ylim(0, 1)
-    ax.set_xlim(-10, 10)
-
-    def update(frame):
-        line.set_ydata(wf_results[frame])
-        return line,
-
-    ani = animation.FuncAnimation(fig, update, frames=range(M+1), interval=50, blit=True)
-    plt.show()
-        
+    # def get_wf_xy(self):
+    #     wf_x_part = np.array([solver.wf_x for solver in self.solver_x])
+    #     wf_y_part = np.array([solver.wf_x for solver in self.solver_y])
+    #     return wf_x_part, wf_y_part
+    def get_wf_xy(self):
+        wf_xy = np.zeros((self.Nx, self.Ny), dtype=complex)
+        for i in range(self.Nx):
+            wf_xy[i, :] = self.solver_x[i].wf_x
+        for j in range(self.Ny):
+            wf_xy[:, j] *= self.solver_y[j].wf_x
+        return wf_xy
 
 
-
-
-
-    
