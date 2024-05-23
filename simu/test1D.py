@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from src.wavefunction import Wavefunction
+from simu.src.solver import TDSESolver
+from simu.src.wavefunction import Wavefunction
 
-# Example usage
+# Example usage - 1D simulation
 if __name__ == "__main__":
     # Define parameters
     hbar = 1.0
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     V_x[x < -10] = 1e6
 
     # Create wavefunction instance
-    wf = Wavefunction(x, wf_x0, V_x, hbar, m)
+    wf = TDSESolver(x, wf_x0, V_x, hbar, m)
 
     # Time step and number of steps
     dt = 0.001
