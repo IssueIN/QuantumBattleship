@@ -1,5 +1,5 @@
 import numpy as np
-from src.solver import TDSESolver
+from simu.src.solver import TDSESolver
 
 class Wavefunction:
     def __init__(self, x, y, wf_xy0, V_xy, hbar, m):
