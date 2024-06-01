@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from simu.src.solver import TDSESolver
-from simu.src.wavefunction import Wavefunction
+from src.solver import TDSESolver
+from src.wavefunction import Wavefunction
 
 # Example usage - 1D simulation
 if __name__ == "__main__":
