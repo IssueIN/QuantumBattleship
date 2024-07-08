@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from src.solver import TDSESolver
 
 class Wavefunction:
@@ -7,7 +8,10 @@ class Wavefunction:
         self.y = y
         self.X, self.Y = np.meshgrid(x, y)
         self.wf_xy0 = wf_xy0
+
+        self.potentials = [V_xy]
         self.V_xy = V_xy
+
         self.hbar = hbar
         self.m = m
         self.Nx = len(x)
@@ -32,7 +36,7 @@ class Wavefunction:
             solver.solve(dt/2, Nsteps)
     
     def norm(self, wf):
-        # return np.sqrt((abs(wf) ** 2).sum() * 2 * np.pi / (self.dx * self.dy))
+        # return np.sqrt((abs(wf) ** bn2).sum() * 2 * np.pi / (self.dx * self.dy))
         return np.sqrt((abs(wf) ** 2).sum() * self.dx * self.dy)
     
     def get_wf_xy(self):
@@ -54,6 +58,51 @@ class Wavefunction:
         wf_measured /= self.norm(wf_measured)
         return wf_measured
 
+    def appendV(self, V_new):
+        """
+        Adds a new potential to the existing potential.
+
+        Parameters:
+        -----------
+        V_new : tuple
+            A tuple in the form (x_min, x_max, y_min, y_max, potential_value) specifying
+            the new potential to be added.
+        """
+        x_min, x_max, y_min, y_max, potential_value = V_new
+        mask_x = (self.x >= x_min) & (self.x <= x_max)
+        mask_y = (self.y >= y_min) & (self.y <= y_max)
+        mask = np.outer(mask_x, mask_y)
+        V_add = np.zeros_like(self.V_xy)
+        V_add[mask] = potential_value
+
+        self.potentials.append(V_add)
+        self.V_xy += V_add
+        self.solver_x = [TDSESolver(self.y, self.wf_xy0[i, :], self.V_xy[i, :], self.hbar, self.m) for i in range(self.Nx)]
+        self.solver_y = [TDSESolver(self.x, self.wf_xy0[:, j], self.V_xy[:, j], self.hbar, self.m) for j in range(self.Ny)]
+
+
+    def deleteV(self, index):
+        if 0 <= index < len(self.potentials):
+            self.V_xy -= self.potentials[index]
+            del self.potentials[index]
+            self.solver_x = [TDSESolver(self.y, self.wf_xy0[i, :], self.V_xy[i, :], self.hbar, self.m) for i in range(self.Nx)]
+            self.solver_y = [TDSESolver(self.x, self.wf_xy0[:, j], self.V_xy[:, j], self.hbar, self.m) for j in range(self.Ny)]  
+
+    def V_map(self):
+        """
+        Plots the potential values as a heatmap.
+        """
+        total_potential = sum(self.potentials)
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        cax = ax.imshow(total_potential, extent=[self.x.min(), self.x.max(), self.y.min(), self.y.max()],
+                        origin='lower', aspect='auto', cmap='viridis')
+        fig.colorbar(cax, ax=ax, label='Potential')
+        ax.set_title('Heatmap of the Potential')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+
+        return fig
 
 
 
